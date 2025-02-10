@@ -39,9 +39,9 @@ jobs:
           cli-version: "latest"
           default-config-file-path: ".snowflake/config.toml"
         
-      - name: Configure Snowflake Connection
-        run: |
-          snow connection add -n default --user ${{ secrets.SNOWFLAKE_USER }} --no-interactive
+#      - name: Configure Snowflake Connection
+#        run: |
+#          snow connection add -n default --user ${{ secrets.SNOWFLAKE_USER }} --no-interactive
 
       # Update Snowflake's copy of the repository
       - name: Fetch repository changes
