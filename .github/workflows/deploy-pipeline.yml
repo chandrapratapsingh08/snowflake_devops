@@ -9,75 +9,43 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+    SNOWFLAKE_DEFAULT_CONNECTION_NAME: "workflow"
+    SNOWFLAKE_CONNECTIONS_WORKFLOW_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+    SNOWFLAKE_CONNECTIONS_WORKFLOW_USER: ${{ secrets.SNOWFLAKE_USER }}
+    SNOWFLAKE_CONNECTIONS_WORKFLOW_PRIVATE_KEY_PASSPHRASE:
+        ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+    SNOWFLAKE_CONNECTIONS_WORKFLOW_PRIVATE_KEY_RAW:
+        ${{ secrets.SNOWFLAKE_PRIVATE_KEY_RAW }}
+    GIT_REPO_DB: MY_GIT_REPOS
+    GIT_REPO_SCHEMA: GITHUB
+    GIT_REPO_NAME: snowflake_devops
+    
 jobs:
-  deploy:
-    runs-on: ubuntu-22.04
-    
-    env:
-      SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-      SNOWFLAKE_CONNECTIONS_DEFAULT_USER: ${{ secrets.SNOWFLAKE_USER }}
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-    
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-    
-      - name: Install dependencies
-        run: |
-          pip install pyjwt cryptography
-    
-      - name: Decode private key and generate JWT
-        id: generate-jwt
-        run: |
-          # Decode the Base64-encoded private key
-          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" | base64 --decode > rsa_key.p8
-          
-          # Generate the JWT using the decoded private key and password
-          python -c "
-          from cryptography.hazmat.primitives import serialization
-          import jwt
-          import datetime
-          
-          # Load the encrypted private key
-          with open('rsa_key.p8', 'rb') as key_file:
-              private_key = serialization.load_pem_private_key(
-                  key_file.read(),
-                  password='${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}'.encode(),
-              )
-          
-          # Create the JWT payload
-          payload = {
-              'iss': '${{ secrets.SNOWFLAKE_ACCOUNT }}.${{ secrets.SNOWFLAKE_USER }}',
-              'sub': '${{ secrets.SNOWFLAKE_ACCOUNT }}.${{ secrets.SNOWFLAKE_USER }}',
-              'iat': datetime.datetime.utcnow(),
-              'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
-          }
-          
-          # Generate the JWT
-          token = jwt.encode(payload, private_key, algorithm='RS256')
-          print(f'Generated JWT: {token}')  # Debug: Print the JWT to logs
-          with open('$GITHUB_OUTPUT', 'a') as f:
-              f.write(f'JWT={token}\n')
-          "
-    
-      - name: Install snowflake-cli
-        uses: Snowflake-Labs/snowflake-cli-action@v1.5
-        with:
-          cli-version: "latest"
-          default-config-file-path: ".snowflake/config.toml"
-    
-      - name: Fetch repository changes
-        env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          SNOWFLAKE_DEBUG: true  # Enable debugging
-        run: |
-          echo "Using JWT: $SNOWFLAKE_CONNECTIONS_DEFAULT_JWT"  # Debug: Print the JWT
-          snow git fetch snowflake_devops
-    
-      - name: Deploy scripts to preprod environment
-        run: snow git execute @my_git_repo/branches/main/scripts/* \
-            -D "environment='preprod'"
+    Deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - uses: Snowflake-Labs/snowflake-cli-action@v1.5
+              with:
+                  cli-version: "latest"
+                  default-config-file-path: "./snowflake/config.toml"
+
+            - name: Check Version and Verify Connection
+              env:
+                  PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+              run: |
+                  snow --version
+                  snow connection test
+                  echo "Using branch $GITHUB_REF_NAME"
+
+            - name: Refresh Repo
+              env:
+                  PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+                  GIT_REPO_FQN:
+                      ${{ env.GIT_REPO_DB }}.${{ env.GIT_REPO_SCHEMA }}.${{
+                      env.GIT_REPO_NAME }}
+              run: |
+                  snow git fetch "$GIT_REPO_FQN"
