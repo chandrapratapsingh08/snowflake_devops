@@ -41,13 +41,13 @@ jobs:
         
       - name: Configure Snowflake Connection
         run: |
-          snow connection add \
-            --connection-name default \
-            --authenticator SNOWFLAKE_JWT \
-            --private-key-path ".snowflake/snowflake_rsa_key" \
-            --user ${{ secrets.SNOWFLAKE_USER }}
-          snow connection test default
-
+#          snow connection add \
+#            --connection-name default \
+#            --authenticator SNOWFLAKE_JWT \
+#            --private-key-path ".snowflake/snowflake_rsa_key" \
+#            --user ${{ secrets.SNOWFLAKE_USER }}
+#          snow connection test default
+          snow connection add -n default --user ${{ secrets.SNOWFLAKE_USER }} --no-interactive
 
       # Update Snowflake's copy of the repository
       - name: Fetch repository changes
