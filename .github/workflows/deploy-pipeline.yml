@@ -59,6 +59,7 @@ jobs:
           
           # Generate the JWT
           token = jwt.encode(payload, private_key, algorithm='RS256')
+          print(f'Generated JWT: {token}')  # Debug: Print the JWT to logs
           with open('$GITHUB_OUTPUT', 'a') as f:
               f.write(f'JWT={token}\n')
           "
@@ -73,7 +74,9 @@ jobs:
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
           SNOWFLAKE_DEBUG: true  # Enable debugging
-        run: snow git fetch snowflake_devops
+        run: |
+          echo "Using JWT: $SNOWFLAKE_CONNECTIONS_DEFAULT_JWT"  # Debug: Print the JWT
+          snow git fetch snowflake_devops
     
       - name: Deploy scripts to preprod environment
         run: snow git execute @my_git_repo/branches/main/scripts/* \
