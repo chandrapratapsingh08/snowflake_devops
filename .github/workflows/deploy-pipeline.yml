@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     env:
-      REPO_NAME: "chandrapratapsingh08/snowflake-devops"
+      REPO_NAME: "snowflake-devops"
       SNOWFLAKE_CONNECTIONS_DEFAULT_AUTHENTICATOR: "SNOWFLAKE_JWT"
       SNOWFLAKE_CONNECTIONS_DEFAULT_PRIVATE_KEY_FILE: ".snowflake/snowflake_rsa_key"
       # Read connection secrets
