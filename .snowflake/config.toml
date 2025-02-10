@@ -2,6 +2,6 @@ default_connection_name = "workflow"
 
 [connections]
 [connections.workflow]
-account = "YFB07291"
+account = "xazihzr-yfb07291"
 user = "CPDEVRA7"
 authenticator="SNOWFLAKE_JWT"
