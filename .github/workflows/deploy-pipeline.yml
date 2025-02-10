@@ -29,7 +29,7 @@ jobs:
           default-config-file-path: ".snowflake/config.toml"
     
       - name: Fetch repository changes
-        run: snow git fetch chandrapratapsingh08/snowflake_devops
+        run: snow git fetch snowflake_devops
     
       - name: Deploy scripts to preprod environment
         run: snow git execute @my_git_repo/branches/main/scripts/* \
