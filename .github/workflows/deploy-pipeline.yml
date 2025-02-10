@@ -86,6 +86,7 @@ jobs:
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
           SNOWFLAKE_DEBUG: true  # Enable debugging
+          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: snow git fetch snowflake_devops
     
       - name: Deploy scripts to preprod environment
