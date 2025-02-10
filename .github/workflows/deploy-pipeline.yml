@@ -41,8 +41,8 @@ jobs:
         
       - name: Configure Snowflake Connection
         run: |
-          snow connection add default \
-            --account-name ${{ secrets.SNOWFLAKE_ACCOUNT }} \
+          snow connection add \
+            --connection-name default \
             --authenticator SNOWFLAKE_JWT \
             --private-key-path ".snowflake/snowflake_rsa_key" \
             --user ${{ secrets.SNOWFLAKE_USER }}
