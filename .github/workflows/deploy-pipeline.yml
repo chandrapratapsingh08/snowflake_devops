@@ -38,7 +38,7 @@ jobs:
                   PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
               run: |
                   snow --version
-                  snow connection test
+                  snow connection test --debug
                   echo "Using branch $GITHUB_REF_NAME"
 
             - name: Refresh Repo
