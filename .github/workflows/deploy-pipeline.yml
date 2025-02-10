@@ -16,11 +16,39 @@ jobs:
     env:
       SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
       SNOWFLAKE_CONNECTIONS_DEFAULT_USER: ${{ secrets.SNOWFLAKE_USER }}
-      SNOWFLAKE_CONNECTIONS_DEFAULT_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+    
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+    
+      - name: Install dependencies
+        run: |
+          pip install pyjwt cryptography
+    
+      - name: Generate JWT
+        id: generate-jwt
+        run: |
+          python -c "
+          import jwt
+          import datetime
+          with open('rsa_key.p8', 'r') as key_file:
+              private_key = key_file.read()
+          payload = {
+              'iss': '${{ secrets.SNOWFLAKE_ACCOUNT }}.${{ secrets.SNOWFLAKE_USER }}',
+              'sub': '${{ secrets.SNOWFLAKE_ACCOUNT }}.${{ secrets.SNOWFLAKE_USER }}',
+              'iat': datetime.datetime.utcnow(),
+              'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+          }
+          token = jwt.encode(payload, private_key, algorithm='RS256')
+          print(f'::set-output name=jwt::{token}')
+          "
+        env:
+          SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
     
       - name: Install snowflake-cli
         uses: Snowflake-Labs/snowflake-cli-action@v1.5
@@ -29,7 +57,9 @@ jobs:
           default-config-file-path: ".snowflake/config.toml"
     
       - name: Fetch repository changes
-        run: snow git fetch snowflake_devops
+        env:
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+        run: snow --debug git fetch snowflake_devops
     
       - name: Deploy scripts to preprod environment
         run: snow git execute @my_git_repo/branches/main/scripts/* \
