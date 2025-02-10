@@ -20,7 +20,7 @@ env:
     GIT_REPO_DB: MY_GIT_REPOS
     GIT_REPO_SCHEMA: GITHUB
     GIT_REPO_NAME: snowflake_devops
-    
+
 jobs:
     Deploy:
         runs-on: ubuntu-latest
