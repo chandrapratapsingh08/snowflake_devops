@@ -88,7 +88,3 @@ jobs:
           SNOWFLAKE_DEBUG: true  # Enable debugging
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: snow git fetch snowflake_devops
-    
-      - name: Deploy scripts to preprod environment
-        run: snow git execute @my_git_repo/branches/main/scripts/* \
-            -D "environment='preprod'"
