@@ -41,7 +41,7 @@ jobs:
 
       # Update Snowflake's copy of the repository
       - name: Fetch repository changes
-        run: snow git fetch snowflake-devops
+        run: snow git fetch "snowflake-devops"
 
       # Deploy pipeline with branch specific parameters
       - name: Deploy data pipeline to ${{ github.ref_name }}
