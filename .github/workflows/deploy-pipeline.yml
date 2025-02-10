@@ -8,7 +8,7 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
+    
 jobs:
   deploy:
     runs-on: ubuntu-22.04
@@ -30,9 +30,13 @@ jobs:
         run: |
           pip install pyjwt cryptography
     
-      - name: Generate JWT
+      - name: Decode private key and generate JWT
         id: generate-jwt
         run: |
+          # Decode the Base64-encoded private key
+          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" | base64 --decode > rsa_key.p8
+          
+          # Generate the JWT using the decoded private key
           python -c "
           import jwt
           import datetime
@@ -47,8 +51,6 @@ jobs:
           token = jwt.encode(payload, private_key, algorithm='RS256')
           print(f'::set-output name=jwt::{token}')
           "
-        env:
-          SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
     
       - name: Install snowflake-cli
         uses: Snowflake-Labs/snowflake-cli-action@v1.5
