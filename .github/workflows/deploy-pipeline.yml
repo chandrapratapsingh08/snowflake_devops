@@ -8,7 +8,7 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-    
+
 jobs:
   deploy:
     runs-on: ubuntu-22.04
@@ -36,18 +36,28 @@ jobs:
           # Decode the Base64-encoded private key
           echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" | base64 --decode > rsa_key.p8
           
-          # Generate the JWT using the decoded private key
+          # Generate the JWT using the decoded private key and password
           python -c "
+          from cryptography.hazmat.primitives import serialization
           import jwt
           import datetime
-          with open('rsa_key.p8', 'r') as key_file:
-              private_key = key_file.read()
+          
+          # Load the encrypted private key
+          with open('rsa_key.p8', 'rb') as key_file:
+              private_key = serialization.load_pem_private_key(
+                  key_file.read(),
+                  password='${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}'.encode(),
+              )
+          
+          # Create the JWT payload
           payload = {
               'iss': '${{ secrets.SNOWFLAKE_ACCOUNT }}.${{ secrets.SNOWFLAKE_USER }}',
               'sub': '${{ secrets.SNOWFLAKE_ACCOUNT }}.${{ secrets.SNOWFLAKE_USER }}',
               'iat': datetime.datetime.utcnow(),
               'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
           }
+          
+          # Generate the JWT
           token = jwt.encode(payload, private_key, algorithm='RS256')
           print(f'::set-output name=jwt::{token}')
           "
