@@ -38,6 +38,16 @@ jobs:
         with:
           cli-version: "latest"
           default-config-file-path: ".snowflake/config.toml"
+        
+      - name: Configure Snowflake Connection
+        run: |
+          snow connection add default \
+            --account-name ${{ secrets.SNOWFLAKE_ACCOUNT }} \
+            --authenticator SNOWFLAKE_JWT \
+            --private-key-path ".snowflake/snowflake_rsa_key" \
+            --user ${{ secrets.SNOWFLAKE_USER }}
+          snow connection test default
+
 
       # Update Snowflake's copy of the repository
       - name: Fetch repository changes
