@@ -1,9 +1,16 @@
 USE ROLE ACCOUNTADMIN;
 
-CREATE OR ALTER WAREHOUSE COMPUTE_WH
-  WAREHOUSE_SIZE = XSMALL 
-  AUTO_SUSPEND = 300 
-  AUTO_RESUME= TRUE;
+-- If the warehouse does not exist, create it
+CREATE WAREHOUSE IF NOT EXISTS COMPUTE_WH
+  WAREHOUSE_SIZE = XSMALL
+  AUTO_SUSPEND = 300
+  AUTO_RESUME = TRUE;
+
+-- If the warehouse exists and you need to update its properties, use ALTER
+ALTER WAREHOUSE COMPUTE_WH
+  SET WAREHOUSE_SIZE = XSMALL,
+      AUTO_SUSPEND = 300,
+      AUTO_RESUME = TRUE;
 
 
 -- Separate database for git repository
