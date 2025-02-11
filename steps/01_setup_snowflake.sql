@@ -1,13 +1,13 @@
 USE ROLE ACCOUNTADMIN;
 
-CREATE OR ALTER WAREHOUSE QUICKSTART_WH 
+CREATE OR ALTER WAREHOUSE COMPUTE_WH
   WAREHOUSE_SIZE = XSMALL 
   AUTO_SUSPEND = 300 
   AUTO_RESUME= TRUE;
 
 
 -- Separate database for git repository
-CREATE OR ALTER DATABASE QUICKSTART_COMMON;
+CREATE OR ALTER DATABASE CP_DEMO_DATABASE;
 
 
 -- API integration is needed for GitHub integration
@@ -18,11 +18,11 @@ CREATE OR REPLACE api integration GIT_API_INTEGRATION
     allowed_authentication_secrets = all
 
 -- Git repository object is similar to external stage
-CREATE OR REPLACE GIT REPOSITORY quickstart_common.public.quickstart_repo
+CREATE OR REPLACE GIT REPOSITORY CP_DEMO_DATABASE.PUBLIC.SNOWFLAKE_DEVOPS
   API_INTEGRATION = GIT_API_INTEGRATION
   ORIGIN = 'https://github.com/chandrapratapsingh08/snowflake_devops'; -- INSERT URL OF FORKED REPO HERE
 
-CREATE OR ALTER DATABASE QUICKSTART_PROD;
+CREATE OR ALTER DATABASE CP_DEMO_DATABASE;
 
 
 -- To monitor data pipeline's completion
