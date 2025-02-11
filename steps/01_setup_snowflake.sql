@@ -17,8 +17,6 @@ CREATE OR REPLACE api integration GIT_API_INTEGRATION
     enabled = true
     allowed_authentication_secrets = all
 
-
-DESC INTEGRATION GIT_API_INTEGRATION;
 -- Git repository object is similar to external stage
 CREATE OR REPLACE GIT REPOSITORY SNOWFLAKE_DEVOPS
   API_INTEGRATION = GIT_API_INTEGRATION
