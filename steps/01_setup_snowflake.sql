@@ -20,8 +20,8 @@ CREATE OR REPLACE api integration git_api_integration
 
 -- Git repository object is similar to external stage
 CREATE OR REPLACE GIT REPOSITORY snowflake_devops
-  API_INTEGRATION = git_api_integration
-  ORIGIN = 'https://github.com/chandrapratapsingh08/snowflake_devops.git'; -- INSERT URL OF FORKED REPO HERE
+  API_INTEGRATION = GIT_API_INTEGRATION
+  ORIGIN = 'https://github.com/chandrapratapsingh08/snowflake_devops'; -- INSERT URL OF FORKED REPO HERE
 
 CREATE OR ALTER DATABASE CP_DEMO_DATABASE;
 
