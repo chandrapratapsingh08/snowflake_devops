@@ -29,6 +29,7 @@ jobs:
     env:
       SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
       SNOWFLAKE_CONNECTIONS_DEFAULT_USER: ${{ secrets.SNOWFLAKE_USER }}
+      REPO_NAME: snowflake_devops
     
     steps:
       - name: Checkout repository
@@ -95,5 +96,13 @@ jobs:
           SNOWFLAKE_DEBUG: true  # Enable debugging
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
-          snow git execute @snowflake_devops/branches/main/steps/01_setup_snowflake.sql \
-          -D "environment='preprod'"
+          BRANCH_NAME="main"
+          if [ "${BRANCH_NAME}" == "main" ]; then
+            RETENTION_TIME=1
+          else
+            RETENTION_TIME=0
+          fi
+          snow git execute \
+            "@${REPO_NAME}/branches/${BRANCH_NAME}/steps/0[134]_*" \
+            -D "environment='${BRANCH_NAME}'" \
+            -D "retention_time=${RETENTION_TIME}"
