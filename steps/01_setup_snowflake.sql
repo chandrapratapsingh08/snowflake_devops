@@ -11,7 +11,7 @@ CREATE OR ALTER DATABASE CP_DEMO_DATABASE;
 
 
 -- API integration is needed for GitHub integration
-CREATE OR REPLACE api integration GIT_API_INTEGRATION
+CREATE OR REPLACE api integration git_api_integration
     api_provider = git_https_api
     api_allowed_prefixes = ('https://github.com/chandrapratapsingh08')
     enabled = true
