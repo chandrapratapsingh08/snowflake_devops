@@ -11,13 +11,14 @@ CREATE OR ALTER DATABASE CP_DEMO_DATABASE;
 
 
 -- API integration is needed for GitHub integration
-CREATE OR REPLACE api integration git_api_integration
+CREATE OR REPLACE api integration GIT_API_INTEGRATION
     api_provider = git_https_api
-    api_allowed_prefixes = ('https://github.com/chandrapratapsingh08/')
+    api_allowed_prefixes = ('https://github.com/chandrapratapsingh08')
     enabled = true
     allowed_authentication_secrets = all
 
 
+DESC INTEGRATION GIT_API_INTEGRATION;
 -- Git repository object is similar to external stage
 CREATE OR REPLACE GIT REPOSITORY SNOWFLAKE_DEVOPS
   API_INTEGRATION = GIT_API_INTEGRATION
