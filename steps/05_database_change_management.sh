@@ -67,6 +67,6 @@ Commit your changes to the "dev" branch before continuing
 '
 
 # Fetch changes from GitHub
-snow git fetch quickstart_common.public.quickstart_repo
+snow git fetch cp_demo_database.public.snowflake_devops
 # Deploy the updated data pipeline
-snow git execute @quickstart_common.public.quickstart_repo/branches/dev/steps/0[134]_*
+snow git execute @cp_demo_database.public.snowflake_devops/branches/dev/steps/0[134]_*

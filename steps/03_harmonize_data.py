@@ -121,7 +121,7 @@ pipeline = [
             and arrival_airport = arrival_iata_airport_code
         where departure_airport = (
             select $1:airport 
-            from @quickstart_common.public.quickstart_repo/branches/main/data/home.json 
+            from @cp_demo_database.public.snowflake_devops/branches/main/data/home.json 
                 (FILE_FORMAT => bronze.json_format))
         """,
     ),
@@ -239,7 +239,7 @@ pipeline = [
 root = Root(Session.builder.getOrCreate())
 
 # create views in Snowflake
-silver_schema = root.databases["quickstart_prod"].schemas["silver"]
+silver_schema = root.databases["cp_demo_database"].schemas["silver"]
 silver_schema.user_defined_functions.create(
     map_city_to_airport, mode=CreateMode.or_replace
 )
