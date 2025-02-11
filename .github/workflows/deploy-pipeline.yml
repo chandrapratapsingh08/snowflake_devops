@@ -82,6 +82,13 @@ jobs:
           cli-version: "latest"
           default-config-file-path: ".snowflake/config.toml"
 
+      - name: Fetch repository changes
+        env:
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          SNOWFLAKE_DEBUG: true  # Enable debugging
+          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        run: snow git fetch snowflake_devops
+
       - name: Run Setup snowflake sql
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
@@ -90,10 +97,3 @@ jobs:
         run: |
           snow git execute @snowflake_devops/branches/main/steps/01_setup_snowflake.sql \
           -D "environment='preprod'"
-
-      - name: Fetch repository changes
-        env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          SNOWFLAKE_DEBUG: true  # Enable debugging
-          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-        run: snow git fetch snowflake_devops
