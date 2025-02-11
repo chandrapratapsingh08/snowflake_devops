@@ -50,4 +50,4 @@ CREATE OR ALTER STAGE bronze.raw;
 
 
 -- Copy file from GitHub to internal stage
-copy files into @bronze.raw from @quickstart_common.public.snowflake_devops/branches/main/data/airport_list.json;
+copy files into @bronze.raw from @cp_demo_database.public.snowflake_devops/branches/main/data/airport_list.json;
