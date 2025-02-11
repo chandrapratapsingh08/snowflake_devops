@@ -11,7 +11,7 @@ CREATE OR ALTER DATABASE QUICKSTART_COMMON;
 
 
 -- API integration is needed for GitHub integration
-CREATE OR REPLACE api integration git_api_integration_demo
+CREATE OR REPLACE api integration git_api_integration
     api_provider = git_https_api
     api_allowed_prefixes = ('https://github.com/chandrapratapsingh08/')
     enabled = true
@@ -19,10 +19,9 @@ CREATE OR REPLACE api integration git_api_integration_demo
 
 
 -- Git repository object is similar to external stage
-CREATE OR REPLACE GIT REPOSITORY quickstart_common.public.snowflake_devops_demo
+CREATE OR REPLACE GIT REPOSITORY snowflake_devops
   API_INTEGRATION = git_api_integration_demo
   ORIGIN = 'https://github.com/chandrapratapsingh08/snowflake_devops.git'; -- INSERT URL OF FORKED REPO HERE
-
 
 CREATE OR ALTER DATABASE QUICKSTART_PROD;
 
