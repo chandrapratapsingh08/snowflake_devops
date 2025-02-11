@@ -15,7 +15,7 @@ CREATE OR REPLACE api integration GIT_API_INTEGRATION
     api_provider = git_https_api
     api_allowed_prefixes = ('https://github.com/chandrapratapsingh08')
     enabled = true
-    allowed_authentication_secrets = all
+    allowed_authentication_secrets = all;
 
 -- Git repository object is similar to external stage
 CREATE OR REPLACE GIT REPOSITORY CP_DEMO_DATABASE.PUBLIC.SNOWFLAKE_DEVOPS
