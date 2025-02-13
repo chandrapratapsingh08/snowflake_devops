@@ -59,8 +59,7 @@ jobs:
         run: |
           # Generate the JWT token using the Snowflake CLI
           JWT=$(snow connection generate-jwt \
-            --private-key-path rsa_key.p8 \
-            --private-key-passphrase ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }} \
+            --private-key-file rsa_key.p8 \
             --account ${{ secrets.SNOWFLAKE_ACCOUNT }} \
             --user ${{ secrets.SNOWFLAKE_USER }})
           
