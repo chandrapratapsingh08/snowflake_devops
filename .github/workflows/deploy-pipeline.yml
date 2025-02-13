@@ -76,6 +76,22 @@ jobs:
           print(token)
           "
     
+      - name: Debug System Time
+        run: |
+          echo "Current System Time (UTC):"
+          date -u
+    
+      - name: Debug JWT Token
+        run: |
+          echo "Generated JWT Token:"
+          echo "${{ steps.generate-jwt.outputs.JWT }}"
+          echo "Decoded JWT Payload:"
+          echo "${{ steps.generate-jwt.outputs.JWT }}" | cut -d '.' -f 2 | base64 --decode | jq
+    
+      - name: Debug Environment Variables
+        run: |
+          echo "SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: $SNOWFLAKE_CONNECTIONS_DEFAULT_JWT"
+    
       - name: Install snowflake-cli
         uses: Snowflake-Labs/snowflake-cli-action@v1.5
         with:
@@ -84,25 +100,23 @@ jobs:
 
       - name: Perform a Snowflake connectivity test
         env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.JWT }}
           SNOWFLAKE_DEBUG: true  # Enable debugging
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snow connection list
-          # Disable connection test as it relies upon databases and schemas
-          # that might not be in place yet.
           snow connection test -c workflow --debug
 
       - name: Fetch repository changes
         env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.JWT }}
           SNOWFLAKE_DEBUG: true  # Enable debugging
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: snow git fetch snowflake_devops
 
       - name: Run Setup snowflake sql
         env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.JWT }}
           SNOWFLAKE_DEBUG: true  # Enable debugging
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
