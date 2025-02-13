@@ -73,6 +73,7 @@ jobs:
           token = jwt.encode(payload, private_key, algorithm='RS256')
           with open('$GITHUB_OUTPUT', 'a') as f:
               f.write(f'JWT={token}\n')
+          print(token)
           "
     
       - name: Install snowflake-cli
