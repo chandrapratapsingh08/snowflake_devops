@@ -14,10 +14,8 @@ env:
     SNOWFLAKE_CONNECTIONS_WORKFLOW_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
     SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
     SNOWFLAKE_CONNECTIONS_WORKFLOW_USER: ${{ secrets.SNOWFLAKE_USER }}
-    SNOWFLAKE_CONNECTIONS_WORKFLOW_PRIVATE_KEY_PASSPHRASE:
-        ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-    SNOWFLAKE_CONNECTIONS_WORKFLOW_PRIVATE_KEY_RAW:
-        ${{ secrets.SNOWFLAKE_PRIVATE_KEY_RAW }}
+    SNOWFLAKE_CONNECTIONS_WORKFLOW_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+    SNOWFLAKE_CONNECTIONS_WORKFLOW_PRIVATE_KEY_RAW: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_RAW }}
     GIT_REPO_DB: MY_GIT_REPOS
     GIT_REPO_SCHEMA: GITHUB
     GIT_REPO_NAME: snowflake_devops
@@ -48,6 +46,7 @@ jobs:
         id: generate-jwt
         run: |
           # Decode the Base64-encoded private key
+          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}"
           echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" | base64 --decode > rsa_key.p8
           
           # Generate the JWT using the decoded private key and password
