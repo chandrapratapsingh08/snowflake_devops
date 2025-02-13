@@ -82,6 +82,17 @@ jobs:
           cli-version: "latest"
           default-config-file-path: ".snowflake/config.toml"
 
+      - name: Perform a Snowflake connectivity test
+        env:
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          SNOWFLAKE_DEBUG: true  # Enable debugging
+          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        run: |
+          snow connection list
+          # Disable connection test as it relies upon databases and schemas
+          # that might not be in place yet.
+          snow connection test -c workflow --debug
+
       - name: Fetch repository changes
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
