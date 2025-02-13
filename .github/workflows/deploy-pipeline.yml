@@ -49,6 +49,7 @@ jobs:
           echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > key.txt
           cat key.txt
           echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" | base64 --decode > rsa_key.p8
+          cat rsa_key.p8
           openssl rsa -in rsa_key.p8 -check -passin pass:${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
           
           # Generate the JWT using the decoded private key and password
