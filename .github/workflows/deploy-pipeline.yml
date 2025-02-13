@@ -46,12 +46,7 @@ jobs:
         id: generate-jwt
         run: |
           # Decode the Base64-encoded private key
-          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > key.txt
-          cat key.txt
           echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" | base64 --decode > rsa_key.p8
-          echo "hey"
-          cat rsa_key.p8
-          openssl rsa -in rsa_key.p8 -check -passin pass:${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
           
           # Generate the JWT using the decoded private key and password
           python -c "
