@@ -4,7 +4,7 @@ default_connection_name = "workflow"
 [connections.workflow]
 account = "xazihzr-yfb07291"
 user = "CPDEVRA7"
-authenticator="SNOWFLAKE_JWT"
+authenticator = "SNOWFLAKE_JWT"
 warehouse = "COMPUTE_WH"
 database = "CP_DEMO_DATABASE"
 schema = "PUBLIC"
