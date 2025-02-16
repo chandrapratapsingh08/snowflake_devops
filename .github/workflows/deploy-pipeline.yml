@@ -49,7 +49,7 @@ jobs:
           [connections.workflow]
           account = "${{ vars.SNOWFLAKE_ACCOUNT }}"
           user = "${{ vars.SNOWFLAKE_DEVOPS_USER }}"
-          role = "ACCOUNTADMIN"
+          role = "${{ vars.SNOWFLAKE_DEVOPS_ROLE }}"
           authenticator = "${{ vars.SNOWFLAKE_DEFAULT_AUTHENTICATOR }}"
           warehouse = "${{ vars.SNOWFLAKE_DEVOPS_WAREHOUSE }}"
           database = "${{ vars.SNOWFLAKE_DEVOPS_DB }}"
