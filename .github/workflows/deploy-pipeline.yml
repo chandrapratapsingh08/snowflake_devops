@@ -183,25 +183,25 @@ jobs:
           snow connection list
           snow connection test -c workflow --debug
 
-      - name: Fetch repository changes
-        env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-        run: snow git fetch snowflake_devops -c workflow --debug
+      # - name: Fetch repository changes
+      #   env:
+      #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+      #     PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+      #   run: snow git fetch snowflake_devops -c workflow --debug
 
-      - name: Run Setup snowflake sql
-        env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          SNOWFLAKE_DEBUG: true  # Enable debugging
-          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-        run: |
-          BRANCH_NAME="main"
-          if [ "${BRANCH_NAME}" == "main" ]; then
-            RETENTION_TIME=1
-          else
-            RETENTION_TIME=0
-          fi
-          snow git execute \
-            "@${REPO_NAME}/branches/${BRANCH_NAME}/steps/0[134]_*" \
-            -D "environment='${BRANCH_NAME}'" \
-            -D "retention_time=${RETENTION_TIME}"
+      # - name: Run Setup snowflake sql
+      #   env:
+      #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+      #     SNOWFLAKE_DEBUG: true  # Enable debugging
+      #     PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+      #   run: |
+      #     BRANCH_NAME="main"
+      #     if [ "${BRANCH_NAME}" == "main" ]; then
+      #       RETENTION_TIME=1
+      #     else
+      #       RETENTION_TIME=0
+      #     fi
+      #     snow git execute \
+      #       "@${REPO_NAME}/branches/${BRANCH_NAME}/steps/0[134]_*" \
+      #       -D "environment='${BRANCH_NAME}'" \
+      #       -D "retention_time=${RETENTION_TIME}"
