@@ -114,6 +114,7 @@ jobs:
           import jwt
 
           public_key_fp = '${{ env.PUBLIC_KEY_FP }}'
+          private_key = open('rsa_key.p8', 'rb').read()
 
           # Construct the fully qualified name of the user in uppercase.
           account = '${{ vars.SNOWFLAKE_ACCOUNT }}'
