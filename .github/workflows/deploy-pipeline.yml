@@ -113,6 +113,8 @@ jobs:
           from datetime import timedelta, timezone, datetime
           import jwt
 
+          public_key_fp = '${{ env.PUBLIC_KEY_FP }}'
+
           # Construct the fully qualified name of the user in uppercase.
           account = '${{ vars.SNOWFLAKE_ACCOUNT }}'
           if not '.global' in account:
