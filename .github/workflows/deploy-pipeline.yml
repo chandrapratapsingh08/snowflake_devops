@@ -80,7 +80,7 @@ jobs:
           import base64
           from getpass import getpass
           import hashlib
-          
+
           # If you generated an encrypted private key, implement this method to return
           # the passphrase for decrypting your private key. As an example, this function
           # prompts the user for the passphrase.
@@ -88,11 +88,11 @@ jobs:
               return getpass('Passphrase for private key: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}')
           
           # Private key that you will load from the private key file.
-          private_key = rsa_key.p8
+          private_key = "rsa_key.p8"
           
           # Open the private key file.
           # Replace <private_key_file_path> with the path to your private key file (e.g. /x/y/z/rsa_key.p8).
-          with open('rsa_key.p8', 'rb') as pem_in:
+          with open('private_key', 'rb') as pem_in:
               pemlines = pem_in.read()
               try:
                   # Try to access the private key without a passphrase.
