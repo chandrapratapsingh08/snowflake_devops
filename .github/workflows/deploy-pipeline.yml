@@ -89,7 +89,7 @@ jobs:
               'iss': '${{ vars.SNOWFLAKE_ACCOUNT }}.${{ vars.SNOWFLAKE_USER }}',
               'sub': '${{ vars.SNOWFLAKE_ACCOUNT }}.${{ vars.SNOWFLAKE_USER }}',
               'iat': datetime.datetime.utcnow(),
-              'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=5),,
+              'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
           }
           
           # Generate the JWT
