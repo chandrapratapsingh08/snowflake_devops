@@ -73,43 +73,37 @@ jobs:
         run: |
           python -c "
           from cryptography.hazmat.primitives.serialization import load_pem_private_key
-          from cryptography.hazmat.primitives.serialization import Encoding
-          from cryptography.hazmat.primitives.serialization import PublicFormat
+          from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
           from cryptography.hazmat.backends import default_backend
-
           import base64
-          from getpass import getpass
           import hashlib
 
-          # If you generated an encrypted private key, implement this method to return
-          # the passphrase for decrypting your private key. As an example, this function
-          # prompts the user for the passphrase.
-          def get_private_key_passphrase():
-              return getpass('Passphrase for private key: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}')
-          
-          # Private key that you will load from the private key file.
-          private_key = "rsa_key.p8"
-          
-          # Open the private key file.
-          # Replace <private_key_file_path> with the path to your private key file (e.g. /x/y/z/rsa_key.p8).
-          with open('private_key', 'rb') as pem_in:
+          # Load the private key from the file
+          with open('rsa_key.p8', 'rb') as pem_in:
               pemlines = pem_in.read()
               try:
-                  # Try to access the private key without a passphrase.
+                  # Try to access the private key without a passphrase
                   private_key = load_pem_private_key(pemlines, None, default_backend())
               except TypeError:
-                  # If that fails, provide the passphrase returned from get_private_key_passphrase().
-                  private_key = load_pem_private_key(pemlines, get_private_key_passphrase().encode(), default_backend())
-          
-          # Get the raw bytes of the public key.
+                  # If the key is encrypted, provide the passphrase
+                  private_key = load_pem_private_key(pemlines, b'${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}', default_backend())
+
+          # Get the raw bytes of the public key
           public_key_raw = private_key.public_key().public_bytes(Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
-          
-          # Get the sha256 hash of the raw bytes.
+
+          # Get the SHA-256 hash of the raw bytes
           sha256hash = hashlib.sha256()
           sha256hash.update(public_key_raw)
-          
-          # Base64-encode the value and prepend the prefix 'SHA256:'.
+
+          # Base64-encode the value and prepend the prefix 'SHA256:'
           public_key_fp = 'SHA256:' + base64.b64encode(sha256hash.digest()).decode('utf-8')
+
+          # Print the public key fingerprint for debugging
+          print('Public Key Fingerprint:', public_key_fp)
+
+          # Save the fingerprint to an environment variable for use in the next step
+          with open('$GITHUB_ENV', 'a') as env_file:
+              env_file.write(f'PUBLIC_KEY_FP={public_key_fp}\n')
           "
     
       - name: Decode private key and generate JWT
