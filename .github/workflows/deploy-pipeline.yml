@@ -76,11 +76,11 @@ jobs:
           from cryptography.hazmat.primitives.serialization import Encoding
           from cryptography.hazmat.primitives.serialization import PublicFormat
           from cryptography.hazmat.backends import default_backend
-          ..
+
           import base64
           from getpass import getpass
           import hashlib
-          ..
+          
           # If you generated an encrypted private key, implement this method to return
           # the passphrase for decrypting your private key. As an example, this function
           # prompts the user for the passphrase.
