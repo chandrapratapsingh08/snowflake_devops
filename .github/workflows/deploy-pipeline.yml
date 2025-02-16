@@ -108,7 +108,7 @@ jobs:
           snow connection list
           # Disable connection test as it relies upon databases and schemas
           # that might not be in place yet.
-          snow connection test -c workflow --debug
+        # snow connection test -c workflow --debug
 
       - name: Fetch repository changes
         env:
