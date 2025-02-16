@@ -178,7 +178,6 @@ jobs:
       - name: Perform a Snowflake connectivity test
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          SNOWFLAKE_DEBUG: true  # Enable debugging
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snow connection list
@@ -187,7 +186,6 @@ jobs:
       - name: Fetch repository changes
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          SNOWFLAKE_DEBUG: true  # Enable debugging
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: snow git fetch snowflake_devops -c workflow --debug
 
