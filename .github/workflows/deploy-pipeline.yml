@@ -68,116 +68,18 @@ jobs:
           cli-version: "latest"
           default-config-file-path: ".snowflake/config.toml"
 
-      - name: Generate Figerprint for JWT
-        id: generate-fingerprint
-        run: |
-          python -c "
-          from cryptography.hazmat.primitives.serialization import load_pem_private_key
-          from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
-          from cryptography.hazmat.backends import default_backend
-          import base64
-          import hashlib
-
-          # Load the private key from the file
-          with open('rsa_key.p8', 'rb') as pem_in:
-              pemlines = pem_in.read()
-              try:
-                  # Try to access the private key without a passphrase
-                  private_key = load_pem_private_key(pemlines, None, default_backend())
-              except TypeError:
-                  # If the key is encrypted, provide the passphrase
-                  private_key = load_pem_private_key(pemlines, b'${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}', default_backend())
-
-          # Get the raw bytes of the public key
-          public_key_raw = private_key.public_key().public_bytes(Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
-
-          # Get the SHA-256 hash of the raw bytes
-          sha256hash = hashlib.sha256()
-          sha256hash.update(public_key_raw)
-
-          # Base64-encode the value and prepend the prefix 'SHA256:'
-          public_key_fp = 'SHA256:' + base64.b64encode(sha256hash.digest()).decode('utf-8')
-
-          # Print the public key fingerprint for debugging
-          print('Public Key Fingerprint:', public_key_fp)
-
-          # Save the fingerprint to an environment variable for use in the next step
-          with open('$GITHUB_ENV', 'a') as env_file:
-              env_file.write(f'PUBLIC_KEY_FP={public_key_fp}\n')
-          "
-    
-      - name: Decode private key and generate JWT
+      - name: Generate JWT and Fingerprint
         id: generate-jwt
         env:
-          PUBLIC_KEY_FP: ${{ env.PUBLIC_KEY_FP }}
-        run: | 
-          python -c "
-          from datetime import timedelta, timezone, datetime
-          import jwt
-          from cryptography.hazmat.primitives.serialization import load_pem_private_key
-          from cryptography.hazmat.backends import default_backend
-          import os
-
-          # Load the private key from the file
-          with open('rsa_key.p8', 'rb') as pem_in:
-              pemlines = pem_in.read()
-              try:
-                  # Try to access the private key without a passphrase
-                  private_key = load_pem_private_key(pemlines, None, default_backend())
-              except TypeError:
-                  # If the key is encrypted, provide the passphrase
-                  private_key = load_pem_private_key(
-                      pemlines,
-                      password=b'${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}',  # Passphrase for the private key
-                      backend=default_backend()
-                  )
-
-          # Construct the fully qualified name of the user in uppercase
-          account = '${{ vars.SNOWFLAKE_ACCOUNT }}'
-          if not '.global' in account:
-              idx = account.find('.')
-              if idx > 0:
-                  account = account[0:idx]
-              else:
-                  idx = account.find('-')
-                  if idx > 0:
-                      account = account[0:idx]
-
-          account = account.upper()
-          user = '${{ vars.SNOWFLAKE_DEVOPS_USER }}'.upper()
-          qualified_username = account + '.' + user
-
-          # Get the current time and set the JWT expiration time
-          now = datetime.now(timezone.utc)
-          lifetime = timedelta(minutes=59)
-
-          # Create the payload for the token
-          payload = {
-              'iss': qualified_username + '.' + os.environ['PUBLIC_KEY_FP'],
-              'sub': qualified_username,
-              'iat': now,
-              'exp': now + lifetime
-          }
-
-          # Generate the JWT
-          encoding_algorithm = 'RS256'
-          token = jwt.encode(payload, key=private_key, algorithm=encoding_algorithm)
-
-          # If the token is a byte string, convert it to a string
-          if isinstance(token, bytes):
-              token = token.decode('utf-8')
-
-          # Print the generated JWT
-          print('Generated JWT:', token)
-
-          # Save the JWT to an environment variable for use in the next steps
-          with open('$GITHUB_ENV', 'a') as env_file:
-              env_file.write(f'JWT={token}\n')
-          "
+          SNOWFLAKE_PRIVATE_KEY_PASSWORD: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+          SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_DEVOPS_USER: ${{ vars.SNOWFLAKE_DEVOPS_USER }}
+        run: |
+          python ./scripts/generate_jwt.py
 
       - name: Perform a Snowflake connectivity test
         env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ env.JWT }}
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snow connection list
@@ -185,13 +87,13 @@ jobs:
 
       # - name: Fetch repository changes
       #   env:
-      #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+      #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ env.JWT }}
       #     PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
       #   run: snow git fetch snowflake_devops -c workflow --debug
 
       # - name: Run Setup snowflake sql
       #   env:
-      #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+      #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ env.JWT }}
       #     SNOWFLAKE_DEBUG: true  # Enable debugging
       #     PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
       #   run: |

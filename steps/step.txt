@@ -1,0 +1,15 @@
+Manually configure CI_DEVOPS_ROLE and CI_DEVOPS_USER through Snowsight
+
+---
+
+IAC Steps configured via GitHub Workflow
+
+01 - Devops integrations
+02 - Curated Roles
+03 - Access policies (whitelisting etc)
+03 - User management
+04 - Monitoring integration
+
+---
+
+Self-service tenant management configured using API/Operator
