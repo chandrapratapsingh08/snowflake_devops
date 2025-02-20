@@ -22,6 +22,31 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Read Changelog Content
+        id: changelog_content
+        shell: bash
+        run: |
+          # Read the content of changelog.md and store it in a variable
+          CHANGES=$(cat ./changelog.md)
+          ESCAPED_CHANGES=$(echo "$CHANGES" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' -e 's/"/\\"/g')
+          echo "changelog_content=$ESCAPED_CHANGES"
+          echo "changelog_content=$ESCAPED_CHANGES" >> $GITHUB_OUTPUT
+
+      - name: Echo Changelog Content
+        run: |
+          echo changelog: "${{ steps.changelog_content.outputs.changelog_content }}
+
+      - name: Send Slack Message
+        uses: act10ns/slack@v2.0.0
+        env:
+          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+        with:
+          status: ${{ job.status }}
+          message: |
+            Successfully Deployed to Production: - <{run_url} | View Run Log>
+            Pipeline URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            ChangeLog: ${{ steps.changelog_content.outputs.changelog_content }}
     
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -84,27 +109,6 @@ jobs:
         run: |
           snow connection list
           snow connection test -c workflow --debug
-
-      - name: Read Changelog Content
-        id: changelog_content
-        shell: bash
-        run: |
-          # Read the content of changelog.md and store it in a variable
-          CHANGES=$(cat ./changelog.md)
-          ESCAPED_CHANGES=$(echo "$CHANGES" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' -e 's/"/\\"/g')
-          echo "changelog_content=$ESCAPED_CHANGES"
-          echo "changelog_content=$ESCAPED_CHANGES" >> $GITHUB_OUTPUT
-
-      - name: Send Slack Message
-        uses: act10ns/slack@v2.0.0
-        with:
-          status: ${{ job.status }}
-          message: |
-            Successfully Deployed to Production: - <{run_url} | View Run Log>
-            Pipeline URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            ChangeLog: ${{ steps.changelog_content.outputs.changelog_content }}
-        env:
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
 
       # - name: Fetch repository changes
       #   env:
