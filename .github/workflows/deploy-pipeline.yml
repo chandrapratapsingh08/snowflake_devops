@@ -43,6 +43,7 @@ jobs:
           SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
         with:
           status: ${{ job.status }}
+          webhook-url: ${{ env.SLACK_WEBHOOK_URL }}
           message: |
             Successfully Deployed to Production: - <{run_url} | View Run Log>
             Pipeline URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
