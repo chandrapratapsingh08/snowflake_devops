@@ -90,7 +90,7 @@ jobs:
         shell: bash
         run: |
           # Read the content of changelog.md and store it in a variable
-          CHANGES=$(cat ./changelog/changelog.md)
+          CHANGES=$(cat ./changelog.md)
           ESCAPED_CHANGES=$(echo "$CHANGES" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' -e 's/"/\\"/g')
           echo "changelog_content=$ESCAPED_CHANGES"
           echo "changelog_content=$ESCAPED_CHANGES" >> $GITHUB_OUTPUT
