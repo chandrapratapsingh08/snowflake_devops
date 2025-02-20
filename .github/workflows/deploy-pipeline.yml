@@ -99,11 +99,11 @@ jobs:
         uses: ravsamhq/notify-slack-action@v2
         with:
           status: ${{ job.status }}
-          notification_title: "Successfully Deployed to Production: ${{ steps.increment-release.outputs.NEW_TAG }} - <{run_url} | View Run Log>"
+          notification_title: "Successfully Deployed to Production: - <{run_url} | View Run Log>"
           message_format: "{emoji} *{workflow}* {status_message} - ```$(echo -e '${{ steps.changelog_content.outputs.changelog_content }}')```"
           footer: ""
         env:
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
 
       # - name: Fetch repository changes
       #   env:
