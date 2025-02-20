@@ -35,7 +35,7 @@ jobs:
 
       - name: Echo Changelog Content
         run: |
-          echo changelog: "${{ steps.changelog_content.outputs.changelog_content }}
+          echo changelog: "${{ steps.changelog_content.outputs.changelog_content }}"
 
       - name: Send Slack Message
         uses: act10ns/slack@v2.0.0
