@@ -96,12 +96,13 @@ jobs:
           echo "changelog_content=$ESCAPED_CHANGES" >> $GITHUB_OUTPUT
 
       - name: Send Slack Message
-        uses: ravsamhq/notify-slack-action@v2
+        uses: act10ns/slack@v2.0.0
         with:
           status: ${{ job.status }}
-          notification_title: "Successfully Deployed to Production: - <{run_url} | View Run Log>"
-          message_format: "{emoji} *{workflow}* {status_message} - ```$(echo -e '${{ steps.changelog_content.outputs.changelog_content }}')```"
-          footer: ""
+          message: |
+            Successfully Deployed to Production: - <{run_url} | View Run Log>
+            Pipeline URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            ChangeLog: ${{ steps.changelog_content.outputs.changelog_content }}
         env:
           SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
 
