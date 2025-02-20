@@ -85,6 +85,26 @@ jobs:
           snow connection list
           snow connection test -c workflow --debug
 
+      - name: Read Changelog Content
+        id: changelog_content
+        shell: bash
+        run: |
+          # Read the content of changelog.md and store it in a variable
+          CHANGES=$(cat ./changelog/changelog.md)
+          ESCAPED_CHANGES=$(echo "$CHANGES" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' -e 's/"/\\"/g')
+          echo "changelog_content=$ESCAPED_CHANGES"
+          echo "changelog_content=$ESCAPED_CHANGES" >> $GITHUB_OUTPUT
+
+      - name: Send Slack Message
+        uses: ravsamhq/notify-slack-action@v2
+        with:
+          status: ${{ job.status }}
+          notification_title: "Successfully Deployed to Production: ${{ steps.increment-release.outputs.NEW_TAG }} - <{run_url} | View Run Log>"
+          message_format: "{emoji} *{workflow}* {status_message} - ```$(echo -e '${{ steps.changelog_content.outputs.changelog_content }}')```"
+          footer: ""
+        env:
+          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+
       # - name: Fetch repository changes
       #   env:
       #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ env.JWT }}
