@@ -40,6 +40,13 @@ jobs:
         run: |
           pip install pipx pyjwt cryptography jinja2-cli
 
+      - name: Check Versions
+        run: |
+          python --version
+          pip --version
+          openssl version
+          pip show oscrypto
+
       - name: Get variables as JSON
         run: |
           VARS_CONTEXT='${{ toJson(vars) }}'
