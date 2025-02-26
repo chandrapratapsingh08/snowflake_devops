@@ -61,7 +61,7 @@ jobs:
           cat .snowflake/config.toml
           echo "Rendered SnowSQL Config:"
           cat .snowsql/config
-          
+
       - name: Decode private key
         id: decode-private-key
         run: |
@@ -89,7 +89,7 @@ jobs:
       - name: Test SnowSQL
         run: |
           snowsql --version
-          snowsql -c workflow
+          snowsql -c workflow -o log_level=DEBUG
 
       - name: Generate JWT and Fingerprint
         id: generate-jwt
