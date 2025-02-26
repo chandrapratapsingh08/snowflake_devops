@@ -56,11 +56,12 @@ jobs:
       - name: Render Snow CLI and SnowSQL Config with Jinja2
         run: |
           jinja2 .snowflake/config.toml.j2 vars.json > .snowflake/config.toml
-          jinja2 .snowsql/config.toml.j2 vars.json > .snowsql/config.toml
+          jinja2 .snowsql/config.toml.j2 vars.json > .snowsql/config
           echo "Rendered Snow CLI Config:"
           cat .snowflake/config.toml
           echo "Rendered SnowSQL Config:"
-          cat .snowsql/config.toml
+          cat .snowsql/config
+          snowsql -c workflow
 
       - name: Decode private key
         id: decode-private-key
@@ -85,6 +86,11 @@ jobs:
           SNOWSQL_DEST=/usr/local/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
           export PATH="/usr/local/bin:$PATH"
           echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
+
+      - name: Test SnowSQL
+        run: |
+          snowsql --version
+          snowsql -c workflow
 
       - name: Generate JWT and Fingerprint
         id: generate-jwt
