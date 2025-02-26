@@ -38,7 +38,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pipx pyjwt cryptography jinja2-cli
+          pip install pipx pyjwt cryptography jinja2-cli oscrypto
 
       - name: Check Versions
         run: |
