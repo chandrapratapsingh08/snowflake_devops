@@ -23,43 +23,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Read Changelog Content
-        id: changelog_content
-        shell: bash
-        run: |
-          # Read the content of changelog.md and store it in a variable
-          CHANGES=$(cat ./changelog.md)
-          ESCAPED_CHANGES=$(echo "$CHANGES" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g' -e 's/"/\\"/g')
-          echo "changelog_content=$ESCAPED_CHANGES"
-          echo "changelog_content=$ESCAPED_CHANGES" >> $GITHUB_OUTPUT
-
-      - name: Echo Changelog Content
-        run: |
-          echo changelog: "${{ steps.changelog_content.outputs.changelog_content }}"
-
-      - name: Send Slack Message
-        uses: act10ns/slack@v2.0.0
-        env:
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
-        with:
-          status: ${{ job.status }}
-          webhook-url: ${{ env.SLACK_WEBHOOK_URL }}
-          message: |
-            Successfully Deployed to Production: - <{run_url} | View Run Log>
-            Pipeline URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            ChangeLog: ${{ steps.changelog_content.outputs.changelog_content }}
-    
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-    
       - name: Install dependencies
         run: |
-          pip install pyjwt cryptography
+          pip install pipx pyjwt cryptography jinja2-cli
 
-      - name: Install Dependencies
-        run: pip install jinja2-cli
+      - name: Get variables as JSON
+        run: |
+          VARS_CONTEXT='${{ toJson(vars) }}'
+          echo "$VARS_CONTEXT" > variables.json
+
+      - name: Get Secrets as JSON
+        run: |
+          SECRETS_JSON=$(jq -n \
+          --arg secret1 "${{ secrets.SNOWFLAKE_PUBLIC_KEY }}" \
+          --arg secret2 "${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}" \
+          '{ SNOWFLAKE_PUBLIC_KEY: $secret1, SNOWFLAKE_PRIVATE_KEY_PASSWORD: $secret2 }')
+          echo "$SECRETS_JSON" > secrets.json
+
+      - name: Combine Variables, Secrets, and Environment into a Single JSON
+        run: |
+          # Export environment variables to a JSON file
+          env | awk -F= '{print "\"" $1 "\": \"" $2 "\","}' | sed '$ s/,$//' > env.json
+          echo "{" > temp_env.json && cat env.json >> temp_env.json && echo "}" >> temp_env.json
+
+          # Combine variables.json, secrets.json, and temp_env.json into a single JSON file
+          jq -s '.[0] * .[1] * .[2] | to_entries | sort_by(.key) | from_entries' secrets.json variables.json temp_env.json > combined_vars.json
+
+          # Optionally, sort the keys for readability
+          jq -S . combined_vars.json > sorted_vars.json
+          mv sorted_vars.json vars.json
+
+      - name: Render Snowflake Config with Jinja2
+        run: |
+          jinja2 .snowflake/config.toml.j2 vars.json > .snowflake/config.toml
+          echo "Rendered Snowflake Config:"
+          cat .snowflake/config.toml
 
       - name: Decode private key
         id: decode-private-key
@@ -67,69 +65,70 @@ jobs:
           # Decode the Base64-encoded private key
           echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY_BASE64 }}" | base64 --decode > rsa_key.p8
 
-      - name: Generate Snowflake config.toml
-        run: |
-          mkdir -p .snowflake
-          cat <<EOF > .snowflake/config.toml      
-          [connections]
-          [connections.workflow]
-          account = "${{ vars.SNOWFLAKE_ACCOUNT }}"
-          user = "${{ vars.SNOWFLAKE_DEVOPS_USER }}"
-          role = "${{ vars.SNOWFLAKE_DEVOPS_ROLE }}"
-          authenticator = "${{ vars.SNOWFLAKE_DEFAULT_AUTHENTICATOR }}"
-          warehouse = "${{ vars.SNOWFLAKE_DEVOPS_WAREHOUSE }}"
-          database = "${{ vars.SNOWFLAKE_DEVOPS_DB }}"
-          schema = "${{ vars.SNOWFLAKE_DEVOPS_SCHEMA }}"
-          private_key_file = "rsa_key.p8"
-          EOF
-
       - name: Updated Permission for config.toml
         run: |
           chmod 0600 .snowflake/config.toml
           chown $USER .snowflake/config.toml
 
       - name: Install Snowflake CLI
-        uses: Snowflake-Labs/snowflake-cli-action@v1.5
+        uses: snowflakedb/snowflake-cli-action@v1.5
         with:
           cli-version: "latest"
           default-config-file-path: ".snowflake/config.toml"
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
+          SNOWSQL_DEST=/usr/local/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
+          export PATH="/usr/local/bin:$PATH"
+          echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
 
       - name: Generate JWT and Fingerprint
         id: generate-jwt
         env:
           SNOWFLAKE_PRIVATE_KEY_PASSWORD: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-          SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_DEVOPS_USER: ${{ vars.SNOWFLAKE_DEVOPS_USER }}
         run: |
-          python ./scripts/generate_jwt.py
+          python3 ./scripts/generate_jwt.py
 
       - name: Perform a Snowflake connectivity test
         env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ env.JWT }}
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snow connection list
           snow connection test -c workflow --debug
 
-      # - name: Fetch repository changes
-      #   env:
-      #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ env.JWT }}
-      #     PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-      #   run: snow git fetch snowflake_devops -c workflow --debug
+      - name: Fetch repository changes
+        env:
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        run: |
+          snow git fetch snowflake_devops -c workflow --debug
 
-      # - name: Run Setup snowflake sql
-      #   env:
-      #     SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ env.JWT }}
-      #     SNOWFLAKE_DEBUG: true  # Enable debugging
-      #     PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-      #   run: |
-      #     BRANCH_NAME="main"
-      #     if [ "${BRANCH_NAME}" == "main" ]; then
-      #       RETENTION_TIME=1
-      #     else
-      #       RETENTION_TIME=0
-      #     fi
-      #     snow git execute \
-      #       "@${REPO_NAME}/branches/${BRANCH_NAME}/steps/0[134]_*" \
-      #       -D "environment='${BRANCH_NAME}'" \
-      #       -D "retention_time=${RETENTION_TIME}"
+      - name: Render All Jinja2 Templates
+        run: |
+          find steps/ -name "*.sql.j2" | while read -r template; do
+            output="${template%.j2}"  # Remove .j2 extension
+            jinja2 "$template" vars.json > "$output"
+            echo "Rendered: $template → $output"
+            cat "$output"
+          done
+
+      - name: Upload Rendered SQL Files to Snowflake Stage
+        env:
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        run: |
+          for sql_file in steps/*.sql; do
+            snowsql -c workflow -q "PUT file://$sql_file @~/staged;"
+          done
+
+      - name: Execute Rendered SQL Files in Snowflake
+        env:
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        run: |
+          for sql_file in steps/*.sql; do
+            snowsql -c workflow -q "EXECUTE IMMEDIATE FROM @~/staged/$(basename $sql_file);"
+          done
