@@ -38,7 +38,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pipx pyjwt cryptography jinja2-cli oscrypto
+          pip install pipx pyjwt cryptography jinja2-cli
+          poetry add oscrypto@git+https://github.com/wbond/oscrypto.git@d5f3437ed24257895ae1edd9e503cfb352e635a8
 
       - name: Check Versions
         run: |
