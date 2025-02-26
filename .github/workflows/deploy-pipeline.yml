@@ -87,7 +87,7 @@ jobs:
           SNOWSQL_DEST=/usr/local/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
           export PATH="/usr/local/bin:$PATH"
           echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
-          snowsql -a ${{ vars.SNOWFLAKE_ACCOUNT }} -u ${{ vars.SNOWFLAKE_DEVOPS_USER }} --private-key-path ./rsa_key.p8
+          snowsql -a ${{ vars.SNOWFLAKE_ACCOUNT }} -u ${{ vars.SNOWFLAKE_DEVOPS_USER }} --private-key-path ./rsa_key.p8 -o log_level=DEBUG
       
       - name: Test SnowSQL
         env:
