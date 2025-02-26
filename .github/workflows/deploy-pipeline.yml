@@ -61,8 +61,7 @@ jobs:
           cat .snowflake/config.toml
           echo "Rendered SnowSQL Config:"
           cat .snowsql/config
-          snowsql -c workflow
-
+          
       - name: Decode private key
         id: decode-private-key
         run: |
