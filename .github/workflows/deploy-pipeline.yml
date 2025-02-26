@@ -53,11 +53,14 @@ jobs:
           jq -S . combined_vars.json > sorted_vars.json
           mv sorted_vars.json vars.json
 
-      - name: Render Snowflake Config with Jinja2
+      - name: Render Snow CLI and SnowSQL Config with Jinja2
         run: |
           jinja2 .snowflake/config.toml.j2 vars.json > .snowflake/config.toml
-          echo "Rendered Snowflake Config:"
+          jinja2 .snowsql/config.toml.j2 vars.json > .snowsql/config.toml
+          echo "Rendered Snow CLI Config:"
           cat .snowflake/config.toml
+          echo "Rendered SnowSQL Config:"
+          cat .snowsql/config.toml
 
       - name: Decode private key
         id: decode-private-key
