@@ -87,7 +87,7 @@ jobs:
           echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
           snowsql -a ${{ vars.SNOWFLAKE_ACCOUNT }} -u ${{ vars.SNOWFLAKE_DEVOPS_USER }} --private-key-path ./rsa_key.p8 --private-key-passphrase ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
       
-          - name: Test SnowSQL
+      - name: Test SnowSQL
         env:
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
