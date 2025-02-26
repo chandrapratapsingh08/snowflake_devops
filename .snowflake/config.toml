@@ -1,11 +1,9 @@
-default_connection_name = "workflow"
-
-[connections]
 [connections.workflow]
-account = "xazihzr-yfb07291"
-user = "CPDEVRA7"
-authenticator = "SNOWFLAKE_JWT"
-warehouse = "COMPUTE_WH"
-database = "CP_DEMO_DATABASE"
-schema = "PUBLIC"
+account = "{{ SNOWFLAKE_ACCOUNT }}"
+user = "{{ SNOWFLAKE_DEVOPS_USER }}"
+role = "{{ SNOWFLAKE_DEVOPS_ROLE }}"
+authenticator = "{{ SNOWFLAKE_DEFAULT_AUTHENTICATOR }}"
+warehouse = "{{ SNOWFLAKE_DEVOPS_WAREHOUSE }}"
+database = "{{ SNOWFLAKE_DEVOPS_DB }}"
+schema = "{{ SNOWFLAKE_DEVOPS_SCHEMA }}"
 private_key_file = "rsa_key.p8"
