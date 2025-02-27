@@ -94,6 +94,11 @@ jobs:
           chmod 0600 .snowflake/config.toml
           chown $USER .snowflake/config.toml
 
+      - name: Updated Permission for snowsql config
+        run: |
+          chmod 0600 .snowsql/config
+          chown $USER .snowsql/config
+
       - name: Install Snowflake CLI
         uses: snowflakedb/snowflake-cli-action@v1.5
         with:
