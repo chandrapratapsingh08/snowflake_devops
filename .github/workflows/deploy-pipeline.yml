@@ -18,13 +18,6 @@ jobs:
     env:
       SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
       REPO_NAME: snowflake_devops
-      # SNOWSQL_ACCOUNT : ${{ vars.SNOWFLAKE_ACCOUNT }}
-      # SNOWSQL_USER : ${{ vars.SNOWFLAKE_DEVOPS_USER }}
-      # SNOWSQL_DATABASE : ${{ vars.SNOWFLAKE_DEVOPS_DB }}
-      # SNOWSQL_SCHEMA : ${{ vars.SNOWFLAKE_DEVOPS_SCHEMA }}
-      # SNOWSQL_WAREHOUSE : ${{ vars.SNOWFLAKE_DEVOPS_WAREHOUSE }}
-      # SNOWSQL_ROLE : ${{ vars.SNOWFLAKE_DEVOPS_ROLE }}
-      # SNOWSQL_PRIVATE_KEY_PATH : "./rsa_key.p8"
       SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
     
     steps:
@@ -39,14 +32,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pipx pyjwt cryptography jinja2-cli oscrypto
-
-
-      - name: Check Versions
-        run: |
-          python --version
-          pip --version
-          openssl version
-          pip show oscrypto
 
       - name: Get variables as JSON
         run: |
@@ -74,7 +59,7 @@ jobs:
           jq -S . combined_vars.json > sorted_vars.json
           mv sorted_vars.json vars.json
 
-      - name: Render Snow CLI and SnowSQL Config with Jinja2
+      - name: Render SnowCLI and SnowSQL Config with Jinja2
         run: |
           jinja2 .snowflake/config.toml.j2 vars.json > .snowflake/config.toml
           jinja2 .snowsql/config.toml.j2 vars.json > .snowsql/config
@@ -113,7 +98,6 @@ jobs:
           SNOWSQL_DEST=/usr/local/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
           export PATH="/usr/local/bin:$PATH"
           echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
-          # snowsql -a ${{ vars.SNOWFLAKE_ACCOUNT }} -u ${{ vars.SNOWFLAKE_DEVOPS_USER }} --private-key-path ./rsa_key.p8 -o log_level=DEBUG
       
       - name: Test SnowSQL
         env:
@@ -122,17 +106,17 @@ jobs:
           snowsql --version
           snowsql --config .snowsql/config -c workflow -o log_level=DEBUG
 
-      - name: Generate JWT and Fingerprint
-        id: generate-jwt
-        env:
-          SNOWFLAKE_PRIVATE_KEY_PASSWORD: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-          SNOWFLAKE_DEVOPS_USER: ${{ vars.SNOWFLAKE_DEVOPS_USER }}
-        run: |
-          python3 ./scripts/generate_jwt.py
+      # - name: Generate JWT and Fingerprint
+      #   id: generate-jwt
+      #   env:
+      #     SNOWFLAKE_PRIVATE_KEY_PASSWORD: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+      #     SNOWFLAKE_DEVOPS_USER: ${{ vars.SNOWFLAKE_DEVOPS_USER }}
+      #   run: |
+      #     python3 ./scripts/generate_jwt.py
 
       - name: Perform a Snowflake connectivity test
         env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          # SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snow connection list
@@ -140,7 +124,7 @@ jobs:
 
       - name: Fetch repository changes
         env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          # SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snow git fetch snowflake_devops -c workflow --debug
@@ -155,18 +139,16 @@ jobs:
           done
 
       - name: Cleanup Staged Files
-        env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          # SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        # env:
+        #   SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
         run: |
           echo "Cleaning up staged files..."
           snowsql --config .snowsql/config -c workflow -q "REMOVE @~/staged;"
           echo "Staged files removed."
 
       - name: Upload Rendered SQL Files to Snowflake Stage
-        env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          # SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        # env:
+        #   SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
         run: |
           for sql_file in steps/*.sql; do
             echo "Uploading file: $sql_file"
@@ -175,9 +157,8 @@ jobs:
           snowsql --config .snowsql/config -c workflow -q "LIST @~/staged;"
 
       - name: Execute Rendered SQL Files in Snowflake
-        env:
-          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          # SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        # env:
+        #   SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
         run: |
           for sql_file in steps/*.sql; do
             echo "Executing file: $sql_file"
