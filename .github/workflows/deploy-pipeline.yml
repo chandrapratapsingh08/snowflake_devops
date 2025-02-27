@@ -25,7 +25,7 @@ jobs:
       # SNOWSQL_WAREHOUSE : ${{ vars.SNOWFLAKE_DEVOPS_WAREHOUSE }}
       # SNOWSQL_ROLE : ${{ vars.SNOWFLAKE_DEVOPS_ROLE }}
       # SNOWSQL_PRIVATE_KEY_PATH : "./rsa_key.p8"
-      # SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+      SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
     
     steps:
       - name: Checkout repository
@@ -157,7 +157,7 @@ jobs:
       - name: Cleanup Staged Files
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+          # SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           echo "Cleaning up staged files..."
           snowsql --config .snowsql/config -c workflow -q "REMOVE @~/staged;"
@@ -166,7 +166,7 @@ jobs:
       - name: Upload Rendered SQL Files to Snowflake Stage
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+          # SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           for sql_file in steps/*.sql; do
             echo "Uploading file: $sql_file"
@@ -177,7 +177,7 @@ jobs:
       - name: Execute Rendered SQL Files in Snowflake
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+          # SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           for sql_file in steps/*.sql; do
             echo "Executing file: $sql_file"
