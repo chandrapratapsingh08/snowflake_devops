@@ -164,5 +164,5 @@ jobs:
           PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           for sql_file in steps/*.sql; do
-            snowsql -c workflow -q "EXECUTE IMMEDIATE FROM @~/staged/$(basename $sql_file);"
+            snowsql --private-key-path $SNOWSQL_PRIVATE_KEY_PATH -q "EXECUTE IMMEDIATE FROM @~/staged/$(basename $sql_file);"
           done
