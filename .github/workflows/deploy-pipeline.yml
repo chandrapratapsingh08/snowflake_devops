@@ -120,7 +120,7 @@ jobs:
           SNOWSQL_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snowsql --version
-          snowsql -c workflow -o log_level=DEBUG
+          snowsql -o log_level=DEBUG
 
       - name: Generate JWT and Fingerprint
         id: generate-jwt
