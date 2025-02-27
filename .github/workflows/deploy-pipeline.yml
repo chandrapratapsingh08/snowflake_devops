@@ -149,6 +149,15 @@ jobs:
             cat "$output"
           done
 
+      - name: Cleanup Staged Files
+        env:
+          SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        run: |
+          echo "Cleaning up staged files..."
+          snowsql --private-key-path $SNOWSQL_PRIVATE_KEY_PATH -q "REMOVE @~/staged;"
+          echo "Staged files removed."
+
       - name: Upload Rendered SQL Files to Snowflake Stage
         env:
           SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
