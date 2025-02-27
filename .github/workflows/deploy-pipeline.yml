@@ -110,7 +110,7 @@ jobs:
 
       - name: Fetch repository changes
         run: |
-          snow git fetch data_platform_warehouse -c workflow --debug
+          snow git fetch snowflake_devops -c workflow --debug
 
       - name: Render All Jinja2 Templates
         run: |
