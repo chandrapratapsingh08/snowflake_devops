@@ -18,14 +18,14 @@ jobs:
     env:
       SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
       REPO_NAME: snowflake_devops
-      SNOWSQL_ACCOUNT : ${{ vars.SNOWFLAKE_ACCOUNT }}
-      SNOWSQL_USER : ${{ vars.SNOWFLAKE_DEVOPS_USER }}
-      SNOWSQL_DATABASE : ${{ vars.SNOWFLAKE_DEVOPS_DB }}
-      SNOWSQL_SCHEMA : ${{ vars.SNOWFLAKE_DEVOPS_SCHEMA }}
-      SNOWSQL_WAREHOUSE : ${{ vars.SNOWFLAKE_DEVOPS_WAREHOUSE }}
-      SNOWSQL_ROLE : ${{ vars.SNOWFLAKE_DEVOPS_ROLE }}
-      SNOWSQL_PRIVATE_KEY_PATH : "./rsa_key.p8"
-      SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+      # SNOWSQL_ACCOUNT : ${{ vars.SNOWFLAKE_ACCOUNT }}
+      # SNOWSQL_USER : ${{ vars.SNOWFLAKE_DEVOPS_USER }}
+      # SNOWSQL_DATABASE : ${{ vars.SNOWFLAKE_DEVOPS_DB }}
+      # SNOWSQL_SCHEMA : ${{ vars.SNOWFLAKE_DEVOPS_SCHEMA }}
+      # SNOWSQL_WAREHOUSE : ${{ vars.SNOWFLAKE_DEVOPS_WAREHOUSE }}
+      # SNOWSQL_ROLE : ${{ vars.SNOWFLAKE_DEVOPS_ROLE }}
+      # SNOWSQL_PRIVATE_KEY_PATH : "./rsa_key.p8"
+      # SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
     
     steps:
       - name: Checkout repository
@@ -115,7 +115,7 @@ jobs:
           SNOWSQL_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snowsql --version
-          # snowsql -c workflow -o log_level=DEBUG
+          snowsql -c workflow -o log_level=DEBUG
 
       - name: Generate JWT and Fingerprint
         id: generate-jwt
