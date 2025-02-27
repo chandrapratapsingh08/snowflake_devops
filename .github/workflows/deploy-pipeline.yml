@@ -156,7 +156,7 @@ jobs:
         run: |
           for sql_file in steps/*.sql; do
             echo "Uploading file: $sql_file"
-            snowsql --private-key-path $SNOWSQL_PRIVATE_KEY_PATH -q "PUT file://$sql_file @~/staged;"
+            snowsql --private-key-path $SNOWSQL_PRIVATE_KEY_PATH -q "PUT file://$sql_file @~/staged AUTO_COMPRESS=FALSE;"
           done
           snowsql --private-key-path $SNOWSQL_PRIVATE_KEY_PATH -q "LIST @~/staged;"
 
