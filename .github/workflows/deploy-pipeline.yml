@@ -34,12 +34,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.12'
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
-          pip install pipx pyjwt cryptography jinja2-cli poetry
-          poetry add oscrypto@git+https://github.com/wbond/oscrypto.git@d5f3437ed24257895ae1edd9e503cfb352e635a8
+          pip install pipx pyjwt cryptography jinja2-cli poetry oscrypto
 
       - name: Check Versions
         run: |
