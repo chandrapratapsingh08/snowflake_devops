@@ -38,17 +38,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pipx pyjwt cryptography jinja2-cli poetry oscrypto
-          sudo apt-get update
-          sudo apt-get upgrade 
-          sudo apt-get update openssl
-
-      - name: Check Versions
-        run: |
-          python --version
-          pip --version
-          openssl version
-          pip show oscrypto
+          pip install pipx pyjwt cryptography jinja2-cli
 
       - name: Get variables as JSON
         run: |
