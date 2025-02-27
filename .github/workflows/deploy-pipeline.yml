@@ -17,7 +17,8 @@ jobs:
     
     env:
       SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
-      REPO_NAME: snowflake_devops
+      REPO_NAME: ${{ github.repository }}
+      PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
       SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
     
     steps:
@@ -91,8 +92,6 @@ jobs:
           default-config-file-path: ".snowflake/config.toml"
 
       - name: Install SnowSQL
-        env:
-          SNOWSQL_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
           SNOWSQL_DEST=/usr/local/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
@@ -100,32 +99,16 @@ jobs:
           echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
       
       - name: Test SnowSQL
-        env:
-          SNOWSQL_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snowsql --version
           snowsql --config .snowsql/config -c workflow -o log_level=DEBUG
 
-      # - name: Generate JWT and Fingerprint
-      #   id: generate-jwt
-      #   env:
-      #     SNOWFLAKE_PRIVATE_KEY_PASSWORD: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-      #     SNOWFLAKE_DEVOPS_USER: ${{ vars.SNOWFLAKE_DEVOPS_USER }}
-      #   run: |
-      #     python3 ./scripts/generate_jwt.py
-
       - name: Perform a Snowflake connectivity test
-        env:
-          # SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snow connection list
           snow connection test -c workflow --debug
 
       - name: Fetch repository changes
-        env:
-          # SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
-          PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
         run: |
           snow git fetch snowflake_devops -c workflow --debug
 
@@ -138,17 +121,13 @@ jobs:
             cat "$output"
           done
 
-      - name: Cleanup Staged Files
-        # env:
-        #   SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
+      - name: Cleanup Staged Files in Snowflake
         run: |
           echo "Cleaning up staged files..."
           snowsql --config .snowsql/config -c workflow -q "REMOVE @~/staged;"
           echo "Staged files removed."
 
       - name: Upload Rendered SQL Files to Snowflake Stage
-        # env:
-        #   SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
         run: |
           for sql_file in steps/*.sql; do
             echo "Uploading file: $sql_file"
@@ -157,8 +136,6 @@ jobs:
           snowsql --config .snowsql/config -c workflow -q "LIST @~/staged;"
 
       - name: Execute Rendered SQL Files in Snowflake
-        # env:
-        #   SNOWFLAKE_CONNECTIONS_DEFAULT_JWT: ${{ steps.generate-jwt.outputs.jwt }}
         run: |
           for sql_file in steps/*.sql; do
             echo "Executing file: $sql_file"
