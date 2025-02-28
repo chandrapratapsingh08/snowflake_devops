@@ -1,10 +1,10 @@
 name: Deploy data pipeline
 
-# Action will run on pushes to selected branches
 on:
   push:
     branches:
       - main
+      - devops-integration
 
 permissions:
   id-token: write
@@ -12,132 +12,278 @@ permissions:
   deployments: write
 
 jobs:
-  deploy:
-    runs-on: ubuntu-20.04
-    
-    env:
-      SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
-      REPO_NAME: ${{ github.repository }}
-      PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-      SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          pip install pipx pyjwt cryptography jinja2-cli oscrypto
-
-      - name: Get variables as JSON
-        run: |
-          VARS_CONTEXT='${{ toJson(vars) }}'
-          echo "$VARS_CONTEXT" > variables.json
-
-      - name: Get Secrets as JSON
-        run: |
-          SECRETS_JSON=$(jq -n \
-          --arg secret1 "${{ secrets.SNOWFLAKE_PUBLIC_KEY }}" \
-          --arg secret2 "${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}" \
-          '{ SNOWFLAKE_PUBLIC_KEY: $secret1, SNOWFLAKE_PRIVATE_KEY_PASSWORD: $secret2 }')
-          echo "$SECRETS_JSON" > secrets.json
-
-      - name: Combine Variables, Secrets, and Environment into a Single JSON
-        run: |
-          # Export environment variables to a JSON file
-          env | awk -F= '{print "\"" $1 "\": \"" $2 "\","}' | sed '$ s/,$//' > env.json
-          echo "{" > temp_env.json && cat env.json >> temp_env.json && echo "}" >> temp_env.json
-
-          # Combine variables.json, secrets.json, and temp_env.json into a single JSON file
-          jq -s '.[0] * .[1] * .[2] | to_entries | sort_by(.key) | from_entries' secrets.json variables.json temp_env.json > combined_vars.json
-
-          # Optionally, sort the keys for readability
-          jq -S . combined_vars.json > sorted_vars.json
-          mv sorted_vars.json vars.json
-
-      - name: Render SnowCLI and SnowSQL Config with Jinja2
-        run: |
-          jinja2 .snowflake/config.toml.j2 vars.json > .snowflake/config.toml
-          jinja2 .snowsql/config.toml.j2 vars.json > .snowsql/config
-          echo "Rendered Snow CLI Config:"
-          cat .snowflake/config.toml
-          echo "Rendered SnowSQL Config:"
-          cat .snowsql/config
-
-      - name: Decode private key
-        id: decode-private-key
-        run: |
-          # Decode the Base64-encoded private key
-          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY_BASE64 }}" | base64 --decode > rsa_key.p8
-
-      - name: Updated Permission for config.toml
-        run: |
-          chmod 0600 .snowflake/config.toml
-          chown $USER .snowflake/config.toml
-
-      - name: Updated Permission for snowsql config
-        run: |
-          chmod 0600 .snowsql/config
-          chown $USER .snowsql/config
-
-      - name: Install Snowflake CLI
-        uses: snowflakedb/snowflake-cli-action@v1.5
-        with:
-          cli-version: "latest"
-          default-config-file-path: ".snowflake/config.toml"
-
-      - name: Install SnowSQL
-        run: |
-          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
-          SNOWSQL_DEST=/usr/local/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
-          export PATH="/usr/local/bin:$PATH"
-          echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
+    deploy:
+      runs-on: ubuntu-20.04
       
-      - name: Test SnowSQL
-        run: |
-          snowsql --version
-          snowsql --config .snowsql/config -c workflow -o log_level=DEBUG
+      env:
+        SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
+        REPO_NAME: ${{ github.repository }}
+        PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+        SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+      
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+  
+        - name: Set up Python
+          uses: actions/setup-python@v2
+          with:
+            python-version: '3.10'
 
-      - name: Perform a Snowflake connectivity test
-        run: |
-          snow connection list
-          snow connection test -c workflow --debug
+        - name: Install dependencies
+          run: |
+            pip install pipx pyjwt cryptography jinja2-cli oscrypto
+  
+        - name: Get variables as JSON
+          run: |
+            VARS_CONTEXT='${{ toJson(vars) }}'
+            echo "$VARS_CONTEXT" > variables.json
 
-      - name: Fetch repository changes
-        run: |
-          snow git fetch snowflake_devops -c workflow --debug
+        - name: Create Public Key Json
+          run: |
+            echo "{\"SNOWFLAKE_PUBLIC_KEY\": \"${{ secrets.SNOWFLAKE_PUBLIC_KEY }}\"}" > public_key.json
+  
+        - name: Get Secrets as JSON
+          run: |
+            SECRETS_JSON=$(jq -n 
+            --arg secret "${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}" \
+            '{ SNOWFLAKE_PRIVATE_KEY_PASSWORD: $secret }')
+            echo "$SECRETS_JSON" > secrets.json
+  
+        - name: Combine Variables, Secrets, and Environment into a Single JSON
+          run: |
+            # Export environment variables to a JSON file
+            env | awk -F= '{print "\"" $1 "\": \"" $2 "\","}' | sed '$ s/,$//' > env.json
+            echo "{" > temp_env.json && cat env.json >> temp_env.json && echo "}" >> temp_env.json
+  
+            # Combine variables.json, secrets.json, and temp_env.json into a single JSON file
+            jq -s '.[0] * .[1] * .[2] | to_entries | sort_by(.key) | from_entries' secrets.json variables.json public_key.json temp_env.json > combined_vars.json
+  
+            # Optionally, sort the keys for readability
+            jq -S . combined_vars.json > sorted_vars.json
+            mv sorted_vars.json vars.json
+  
+        - name: Render SnowCLI and SnowSQL Config with Jinja2
+          run: |
+            jinja2 .snowflake/config.toml.j2 vars.json > .snowflake/config.toml
+            jinja2 .snowsql/config.toml.j2 vars.json > .snowsql/config
+            echo "Rendered Snow CLI Config:"
+            cat .snowflake/config.toml
+            echo "Rendered SnowSQL Config:"
+            cat .snowsql/config
+  
+        - name: Decode private key
+          id: decode-private-key
+          run: |
+            # Decode the Base64-encoded private key
+            echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY_BASE64 }}" | base64 --decode > rsa_key.p8
+  
+        - name: Updated Permission for config.toml
+          run: |
+            chmod 0600 .snowflake/config.toml
+            chown $USER .snowflake/config.toml
+  
+        - name: Updated Permission for snowsql config
+          run: |
+            chmod 0600 .snowsql/config
+            chown $USER .snowsql/config
+  
+        - name: Install Snowflake CLI
+          uses: snowflakedb/snowflake-cli-action@v1.5
+          with:
+            cli-version: "latest"
+            default-config-file-path: ".snowflake/config.toml"
+  
+        - name: Install SnowSQL
+          run: |
+            curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
+            SNOWSQL_DEST=/usr/local/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
+            export PATH="/usr/local/bin:$PATH"
+            echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
+        
+        - name: Test SnowSQL
+          run: |
+            snowsql --version
+            snowsql --config .snowsql/config -c workflow -o log_level=DEBUG
+  
+        - name: Perform a Snowflake connectivity test
+          run: |
+            snow connection list
+            snow connection test -c workflow --debug
+  
+        - name: Fetch repository changes
+          run: |
+            snow git fetch snowflake_devops -c workflow --debug
+  
+        - name: Render All Jinja2 Templates
+          run: |
+            find steps/ -name "*.sql.j2" | while read -r template; do
+              output="${template%.j2}"  # Remove .j2 extension
+              jinja2 "$template" vars.json > "$output"
+              echo "Rendered: $template → $output"
+              cat "$output"
+            done
+  
+        - name: Cleanup Staged Files in Snowflake
+          run: |
+            echo "Cleaning up staged files..."
+            snowsql --config .snowsql/config -c workflow -q "REMOVE @~/staged;"
+            echo "Staged files removed."
+  
+        - name: Upload Rendered SQL Files to Snowflake Stage
+          run: |
+            for sql_file in steps/*.sql; do
+              echo "Uploading file: $sql_file"
+              snowsql --config .snowsql/config -c workflow -q "PUT file://$sql_file @~/staged AUTO_COMPRESS=FALSE;"
+            done
+            snowsql --config .snowsql/config -c workflow -q "LIST @~/staged;"
+  
+        - name: Execute Rendered SQL Files in Snowflake
+          run: |
+            for sql_file in steps/*.sql; do
+              echo "Executing file: $sql_file"
+              snowsql --config .snowsql/config -c workflow -q "EXECUTE IMMEDIATE FROM @~/staged/$(basename $sql_file);"
+            done
+# name: Deploy data pipeline
 
-      - name: Render All Jinja2 Templates
-        run: |
-          find steps/ -name "*.sql.j2" | while read -r template; do
-            output="${template%.j2}"  # Remove .j2 extension
-            jinja2 "$template" vars.json > "$output"
-            echo "Rendered: $template → $output"
-            cat "$output"
-          done
+# # Action will run on pushes to selected branches
+# on:
+#   push:
+#     branches:
+#       - main
 
-      - name: Cleanup Staged Files in Snowflake
-        run: |
-          echo "Cleaning up staged files..."
-          snowsql --config .snowsql/config -c workflow -q "REMOVE @~/staged;"
-          echo "Staged files removed."
+# permissions:
+#   id-token: write
+#   contents: read
+#   deployments: write
 
-      - name: Upload Rendered SQL Files to Snowflake Stage
-        run: |
-          for sql_file in steps/*.sql; do
-            echo "Uploading file: $sql_file"
-            snowsql --config .snowsql/config -c workflow -q "PUT file://$sql_file @~/staged AUTO_COMPRESS=FALSE;"
-          done
-          snowsql --config .snowsql/config -c workflow -q "LIST @~/staged;"
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-20.04
+    
+#     env:
+#       SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
+#       REPO_NAME: ${{ github.repository }}
+#       PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+#       SNOWSQL_PRIVATE_KEY_PASSPHRASE : ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}
+    
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Execute Rendered SQL Files in Snowflake
-        run: |
-          for sql_file in steps/*.sql; do
-            echo "Executing file: $sql_file"
-            snowsql --config .snowsql/config -c workflow -q "EXECUTE IMMEDIATE FROM @~/staged/$(basename $sql_file);"
-          done
+#       - name: Set up Python
+#         uses: actions/setup-python@v2
+#         with:
+#           python-version: '3.10'
+
+#       - name: Install dependencies
+#         run: |
+#           pip install pipx pyjwt cryptography jinja2-cli oscrypto
+
+#       - name: Get variables as JSON
+#         run: |
+#           VARS_CONTEXT='${{ toJson(vars) }}'
+#           echo "$VARS_CONTEXT" > variables.json
+
+#       - name: Get Secrets as JSON
+#         run: |
+#           SECRETS_JSON=$(jq -n \
+#           --arg secret1 "${{ secrets.SNOWFLAKE_PUBLIC_KEY }}" \
+#           --arg secret2 "${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}" \
+#           '{ SNOWFLAKE_PUBLIC_KEY: $secret1, SNOWFLAKE_PRIVATE_KEY_PASSWORD: $secret2 }')
+#           echo "$SECRETS_JSON" > secrets.json
+
+#       - name: Combine Variables, Secrets, and Environment into a Single JSON
+#         run: |
+#           # Export environment variables to a JSON file
+#           env | awk -F= '{print "\"" $1 "\": \"" $2 "\","}' | sed '$ s/,$//' > env.json
+#           echo "{" > temp_env.json && cat env.json >> temp_env.json && echo "}" >> temp_env.json
+
+#           # Combine variables.json, secrets.json, and temp_env.json into a single JSON file
+#           jq -s '.[0] * .[1] * .[2] | to_entries | sort_by(.key) | from_entries' secrets.json variables.json temp_env.json > combined_vars.json
+
+#           # Optionally, sort the keys for readability
+#           jq -S . combined_vars.json > sorted_vars.json
+#           mv sorted_vars.json vars.json
+
+#       - name: Render SnowCLI and SnowSQL Config with Jinja2
+#         run: |
+#           jinja2 .snowflake/config.toml.j2 vars.json > .snowflake/config.toml
+#           jinja2 .snowsql/config.toml.j2 vars.json > .snowsql/config
+#           echo "Rendered Snow CLI Config:"
+#           cat .snowflake/config.toml
+#           echo "Rendered SnowSQL Config:"
+#           cat .snowsql/config
+
+#       - name: Decode private key
+#         id: decode-private-key
+#         run: |
+#           # Decode the Base64-encoded private key
+#           echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY_BASE64 }}" | base64 --decode > rsa_key.p8
+
+#       - name: Updated Permission for config.toml
+#         run: |
+#           chmod 0600 .snowflake/config.toml
+#           chown $USER .snowflake/config.toml
+
+#       - name: Updated Permission for snowsql config
+#         run: |
+#           chmod 0600 .snowsql/config
+#           chown $USER .snowsql/config
+
+#       - name: Install Snowflake CLI
+#         uses: snowflakedb/snowflake-cli-action@v1.5
+#         with:
+#           cli-version: "latest"
+#           default-config-file-path: ".snowflake/config.toml"
+
+#       - name: Install SnowSQL
+#         run: |
+#           curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
+#           SNOWSQL_DEST=/usr/local/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
+#           export PATH="/usr/local/bin:$PATH"
+#           echo "/usr/local/bin/snowsql" >> "$GITHUB_PATH"
+      
+#       - name: Test SnowSQL
+#         run: |
+#           snowsql --version
+#           snowsql --config .snowsql/config -c workflow -o log_level=DEBUG
+
+#       - name: Perform a Snowflake connectivity test
+#         run: |
+#           snow connection list
+#           snow connection test -c workflow --debug
+
+#       - name: Fetch repository changes
+#         run: |
+#           snow git fetch snowflake_devops -c workflow --debug
+
+#       - name: Render All Jinja2 Templates
+#         run: |
+#           find steps/ -name "*.sql.j2" | while read -r template; do
+#             output="${template%.j2}"  # Remove .j2 extension
+#             jinja2 "$template" vars.json > "$output"
+#             echo "Rendered: $template → $output"
+#             cat "$output"
+#           done
+
+#       - name: Cleanup Staged Files in Snowflake
+#         run: |
+#           echo "Cleaning up staged files..."
+#           snowsql --config .snowsql/config -c workflow -q "REMOVE @~/staged;"
+#           echo "Staged files removed."
+
+#       - name: Upload Rendered SQL Files to Snowflake Stage
+#         run: |
+#           for sql_file in steps/*.sql; do
+#             echo "Uploading file: $sql_file"
+#             snowsql --config .snowsql/config -c workflow -q "PUT file://$sql_file @~/staged AUTO_COMPRESS=FALSE;"
+#           done
+#           snowsql --config .snowsql/config -c workflow -q "LIST @~/staged;"
+
+#       - name: Execute Rendered SQL Files in Snowflake
+#         run: |
+#           for sql_file in steps/*.sql; do
+#             echo "Executing file: $sql_file"
+#             snowsql --config .snowsql/config -c workflow -q "EXECUTE IMMEDIATE FROM @~/staged/$(basename $sql_file);"
+#           done
