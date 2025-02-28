@@ -13,9 +13,9 @@ GRANT ROLE AAD_PROVISIONER TO ROLE {{ SNOWFLAKE_DEVOPS_ROLE }};
 
 -- Create or replace the SCIM security integration
 CREATE OR REPLACE SECURITY INTEGRATION AAD_PROVISIONING
-    TYPE = SCIM
-    SCIM_CLIENT = 'AZURE'
-    RUN_AS_ROLE = 'AAD_PROVISIONER';
+    type = scim
+    scim_client = 'azure'
+    run_as_role = 'AAD_PROVISIONER';
 
 -- Generate the SCIM access token
-SELECT SYSTEM$GENERATE_SCIM_ACCESS_TOKEN('AAD_PROVISIONING');
+SELECT system$generate_scim_access_token('AAD_PROVISIONING');
