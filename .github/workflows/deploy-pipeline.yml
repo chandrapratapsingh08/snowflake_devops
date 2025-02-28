@@ -45,8 +45,14 @@ jobs:
   
         - name: Get Secrets as JSON
           run: |
+            # Export all secrets as JSON
             SECRET_CONTEXT='${{ toJson(secrets) }}'
-            echo "$SECRET_CONTEXT" > secrets.json
+            
+            # Remove SNOWFLAKE_PUBLIC_KEY from the JSON using jq
+            FILTERED_SECRETS=$(echo "$SECRET_CONTEXT" | jq 'del(.SNOWFLAKE_PUBLIC_KEY)')
+            
+            # Save the filtered JSON to a file
+            echo "$FILTERED_SECRETS" > secrets.json
   
         - name: Combine Variables, Secrets, and Environment into a Single JSON
           run: |
