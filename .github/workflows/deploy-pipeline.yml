@@ -45,8 +45,8 @@ jobs:
   
         - name: Get Secrets as JSON
           run: |
-            SECRETS_JSON=$(jq -n --arg secret "${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}" '{ SNOWFLAKE_PRIVATE_KEY_PASSWORD: $secret }')
-            echo "$SECRETS_JSON" > secrets.json
+            SECRET_CONTEXT='${{ toJson(secrets) }}'
+            echo "$SECRET_CONTEXT" > secrets.json
   
         - name: Combine Variables, Secrets, and Environment into a Single JSON
           run: |
