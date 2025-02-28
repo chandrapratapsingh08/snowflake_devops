@@ -45,8 +45,7 @@ jobs:
   
         - name: Get Secrets as JSON
           run: |
-            SECRETS_JSON=$(jq -n 
-            --arg secret "${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}" \
+            SECRETS_JSON=$(jq -n secret "${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSWORD }}" \
             '{ SNOWFLAKE_PRIVATE_KEY_PASSWORD: $secret }')
             echo "$SECRETS_JSON" > secrets.json
   
