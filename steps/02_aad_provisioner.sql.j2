@@ -1,5 +1,5 @@
 -- Switch to ACCOUNTADMIN role for privileged operations
-USE ROLE ACCOUNTADMIN;
+USE ROLE {{ SNOWFLAKE_DEVOPS_ROLE }};
 
 -- Create or alter the AAD_PROVISIONER role
 CREATE OR REPLACE ROLE AAD_PROVISIONER;
