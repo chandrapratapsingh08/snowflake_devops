@@ -41,7 +41,11 @@ jobs:
 
       - name: Create Public Key Json
         run: |
-          echo "{\"SNOWFLAKE_PUBLIC_KEY\": \"${{ secrets.SNOWFLAKE_PUBLIC_KEY }}\"}" > public_key.json
+          # Escape control characters in SNOWFLAKE_PUBLIC_KEY
+          ESCAPED_PUBLIC_KEY=$(echo -n "${{ secrets.SNOWFLAKE_PUBLIC_KEY }}" | jq -sR .)
+          
+          # Create JSON with the escaped public key
+          echo "{\"SNOWFLAKE_PUBLIC_KEY\": $ESCAPED_PUBLIC_KEY}" > public_key.json
 
       - name: Get Secrets as JSON
         run: |
